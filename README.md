@@ -5,4 +5,8 @@ Packages needed to run app:
  - Tidyverse
 
 Code to run app:
-shiny::runGitHub(repo="ST558_FinalProject", username="mdolan77")
+```r
+shiny::runGitHub(repo="ST558_FinalProject",
+                 username="mdolan77",
+                 subdir="ST558_Final")
+```
