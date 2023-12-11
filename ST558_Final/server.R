@@ -3,10 +3,11 @@
 # Purpose of Program: Final Project (Server file)
 
 # Read in necessary packages
-library(shiny)
-library(tidyverse)
 library(httr)
 library(jsonlite)
+library(shiny)
+library(tidyverse)
+library(DT)
 
 # The below function was created in Project 2 to pull a dataset of NBA game stats
 # for a specified player. It takes in arguments for the player's first and last name,
@@ -200,10 +201,26 @@ player_game_stats <- function(first_name=NULL, last_name=NULL,
 
 # Define server logic
 shinyServer(function(input, output, session) {
-    observe({if("reb" %in% input$glm_vars){
-      updateNumericInput(session, "glm_oreb", max = input$glm_reb)
-    }
+  
+  observeEvent(input$create_data, {
+    if(input$season_option == "select_seasons"){
+    Player_Data <- player_game_stats(first_name = input$first_name,
+                                     last_name = input$last_name,
+                                     season = c(input$seasons[1]:input$seasons[2]))
+    }else{Player_Data <- player_game_stats(first_name = input$first_name,
+                                           last_name = input$last_name)}
+    output$data_table <- renderDataTable({datatable(Player_Data)})
+  })
+  
+  # Update offensive rebound max so it does not exceed rebounds for GLM prediction input
+  observe({if("reb" %in% input$glm_vars){
+      updateNumericInput(session, "glm_oreb", max = input$glm_reb)}
     })
+  
+  # Update offensive rebound max so it does not exceed rebounds for random forest prediction input
+  observe({if("reb" %in% input$rf_vars){
+    updateNumericInput(session, "rf_oreb", max = input$rf_reb)}
+  })
   
     output$distPlot <- renderPlot({
 

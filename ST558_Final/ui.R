@@ -5,6 +5,7 @@
 #Read in necessary packages
 library(shiny)
 library(tidyverse)
+library(DT)
 
 # Define UI for application that draws a histogram
 shinyUI(fluidPage(
@@ -12,23 +13,32 @@ shinyUI(fluidPage(
     # Application title
     titlePanel("NBA Player Data"),
     
+    # Create Tabset Panel
     tabsetPanel(
     
+    #Create the About tab
     tabPanel("About"
       
     ),
+    
+    # Tab that generates the dataset to be used throughout the app
     tabPanel("Data Creation",
       sidebarLayout(
       sidebarPanel(
         h4("Type the first and last name of an NBA player"),
         h5("Note: Include any suffixes like Jr. or Sr. in the Last Name box"),
+        
+        # Inputs (first name, last name, and seasons) to be used in API function
         textInput("first_name", "First Name"),
         textInput("last_name", "Last Name"),
         br(),
         
         h4("Seasons"),
+        
+        # Give the option to use all seasons for that player or only select certain seasons
         radioButtons("season_option", "Select an option", choices = c("All Seasons"="all_seasons", "Select Seasons"="select_seasons")),
         
+        # Slider input for selecting seasons, with some instructions
         conditionalPanel(condition = "input.season_option == 'select_seasons'",
         h4("Select a range of seasons"),
         h5("The range must include seasons that the player played in, and your range must be less than 50 years. Otherwise it will result in an error."),
@@ -36,9 +46,12 @@ shinyUI(fluidPage(
         
         sliderInput("seasons", "Season range", min=1949, max=2023, value = c(1949, 2023), sep="")
         ),
+        actionButton("create_data", "Create Data")
       ),
-      mainPanel()
+      mainPanel(dataTableOutput("data_table"))
       )),
+    
+    # Tab that creates customizable plots and data summaries
     tabPanel("Data Exploration",
     
     # Sidebar to customize the data, plot, and table
@@ -49,8 +62,7 @@ shinyUI(fluidPage(
                     choices = c(Bar = "bar", Histogram="hist",
                                 "Box and Whisker"="box", Scatter="scatter")),
         
-        
-        
+        # Conditional panel for bar plot options
         conditionalPanel(condition = "input.plot_type == 'bar'",
         selectInput("x_var_bar", "X-Axis Variable",
                     choices = c("Home/Away"="home_away", "Win/Loss"="win_loss",
@@ -66,17 +78,22 @@ shinyUI(fluidPage(
                                 "Defensive Rebounds"="dreb", Turnovers="turnover",
                                 "Personal Fouls"="pf", "Team Score"="team_score",
                                 "Opposing Team Score"="opponent_score")),
+        
+        # Allow option for faceting of bar plot
         checkboxInput("group_option_bar", "Include Grouping Variable"),
         conditionalPanel(condition = "input.group_option_bar",
         selectInput("group_var_bar", "Grouping Variable",
                     choices = c("Home/Away"="home_away", "Win/Loss"="win_loss",
                                 "Player Team"="player_team", "Opposing Team"="opponent_team",
                                 Season="season", "Playoffs/Non-Playoffs"="post_season"))),
+        
+        # Customize bar plot and table summaries
         selectInput("stat_type_bar", "Summary Type (Plot and Table)",
                     choices = c("Value-Based Summaries (Mean, SD)"="mean",
                                 "Rank-Based Summaries (Median, IQR)"="median"))
         ),
         
+        # Conditional panel for histogram options
         conditionalPanel(condition = "input.plot_type == 'hist'",
         sliderInput("bins",
                     "Number of bins:",
@@ -93,17 +110,22 @@ shinyUI(fluidPage(
                                 "Defensive Rebounds"="dreb", Turnovers="turnover",
                                 "Personal Fouls"="pf", "Team Score"="team_score",
                                 "Opposing Team Score"="opponent_score")),
+        
+        # Allow option for faceting of histogram
         checkboxInput("group_option_hist", "Include Grouping Variable"),
         conditionalPanel(condition = "input.group_option_hist",
         selectInput("group_var_hist", "Grouping Variable",
                     choices = c("Home/Away"="home_away", "Win/Loss"="win_loss",
                                 "Player Team"="player_team", "Opposing Team"="opponent_team",
                                 Season="season", "Playoffs/Non-Playoffs"="post_season"))),
+        
+        # Customize table summaries
         selectInput("stat_type_hist", "Summary Type (Table Only)",
                     choices = c("Value-Based Summaries (Mean, SD)"="mean",
                                 "Rank-Based Summaries (Median, IQR)"="median"))
         ),
         
+        # Conditional panel for histogram options
         conditionalPanel(condition = "input.plot_type == 'box'",
         selectInput("x_var_box", "X-Axis Variable",
                     choices = c("Home/Away"="home_away", "Win/Loss"="win_loss",
@@ -119,17 +141,22 @@ shinyUI(fluidPage(
                                 "Defensive Rebounds"="dreb", Turnovers="turnover",
                                 "Personal Fouls"="pf", "Team Score"="team_score",
                                 "Opposing Team Score"="opponent_score")),
+        
+        # Allow option for faceting of box plot
         checkboxInput("group_option_box", "Include Grouping Variable"),
         conditionalPanel(condition = "input.group_option_box",
         selectInput("group_var_box", "Grouping Variable",
                     choices = c("Home/Away"="home_away", "Win/Loss"="win_loss",
                                 "Player Team"="player_team", "Opposing Team"="opponent_team",
                                 Season="season", "Playoffs/Non-Playoffs"="post_season"))),
+        
+        # Customize table summaries
         selectInput("stat_type_box", "Summary Type (Table Only)",
                     choices = c("Value-Based Summaries (Mean, SD)"="mean",
                                 "Rank-Based Summaries (Median, IQR)"="median"))
         ),
         
+        # Conditional panel for scatter plot options
         conditionalPanel(condition = "input.plot_type == 'scatter'",
         selectInput("x_var_scatter", "X-Axis Variable",
                     choices = c(Points = "pts", Rebounds="reb", Assists="ast", Steals="stl",
@@ -151,26 +178,35 @@ shinyUI(fluidPage(
                                 "Defensive Rebounds"="dreb", Turnovers="turnover",
                                 "Personal Fouls"="pf", "Team Score"="team_score",
                                 "Opposing Team Score"="opponent_score")),
+        
+        # Allow option for faceting of scatter plot
         checkboxInput("group_option_scatter", "Include Grouping Variable"),
         conditionalPanel(condition = "input.group_option_scatter",
         selectInput("group_var_scatter", "Grouping Variable",
                     choices = c())),
+        
+        # Customize table summaries
         selectInput("stat_type_scatter", "Summary Type (Table Only)",
                     choices = c("Value-Based Summaries (Mean, SD)"="mean",
                                 "Rank-Based Summaries (Median, IQR)"="median"))
         ),
+        
+        # Button to generate plot and summary table
         actionButton("create_plot", "Create Plot and Table")
         ),
 
-        # Show a plot of the generated distribution
+        # Show a plot and table
         mainPanel(
             plotOutput("distPlot")
         )
       )
     ),
     
+    # Tab for modeling
     tabPanel("Modeling",
      tabsetPanel(
+      
+      # Subtab that describes the two models (GLM and random forest)
       tabPanel("Modeling Info",
       withMathJax(),
       h5("Here is an equation: $$E=mc^2$$"),
@@ -178,19 +214,24 @@ shinyUI(fluidPage(
         
       ),
       
+      # Subtab that fits the two models
       tabPanel("Model Fitting",
       sidebarLayout(
       sidebarPanel(
+      
+      #Slider input to specify the percent of the data to train the model on
       h3("Select the percentage of the data to train the model"),
       h5("(The remaining percent will be used to test the model)"),
       sliderInput("training_set", "Training Data Percentage", 75, min=1, max=99, post = "%"),
       br(),
       
+      # Slider input to determine the number of folds for cross-validation (max of 15)
       h3("Select the cross-validation settings"),
       h5("(Used for both models)"),
       sliderInput("cv", "Number of Cross-Validations Folds", 5, min = 1, max = 15),
       br(),
       
+      # Checkbox for variables to use in the GLM model
       h3("Generalized Linear Model Options"),
       checkboxGroupInput("glm_vars", "Variables", inline = TRUE,
                          choices = c(Points = "pts", Rebounds="reb", Assists="ast", Steals="stl",
@@ -203,6 +244,7 @@ shinyUI(fluidPage(
                          ),
       br(),
       
+      # Checkbox for variables to use in the random forest model
       h3("Random Forest Model Options"),
       checkboxGroupInput("rf_vars", "Variables", inline = TRUE,
                          choices = c(Points = "pts", Rebounds="reb", Assists="ast", Steals="stl",
@@ -213,22 +255,27 @@ shinyUI(fluidPage(
                                 Turnovers="turnover", "Personal Fouls"="pf", "Home/Away"="home_away",
                                 "Playoffs/Non-Playoffs"="post_season")
                          ),
+      
+      # Specify tuning parameters for the random forest model
       h4("Input tuning parameters for the random forest model"),
       numericInput("mtry", "Maximum Features", 3, min=2, max=15),
       numericInput("ntree", "Number of Trees", 200, min = 50, max = 500),
       br(),
       
+      # Button to create models
       actionButton("fit_models", "Create Models"),
       ),
       mainPanel()
       )),
       
+      # Subtab for prediction
       tabPanel("Prediction",
       sidebarLayout(
       sidebarPanel(
       h3("Input values for the below variables to get a prediction for each model"),
       br(),
       
+      # Conditionally show predictor inputs based on variables selected in GLM
       h4("Generalized Linear Model Variables"),
       conditionalPanel(condition = "input.glm_vars.indexOf('pts') !== -1",
                        numericInput("glm_pts", "Points", 0, min=0, max=100)),
@@ -265,6 +312,7 @@ shinyUI(fluidPage(
                                    choices=c("Playoffs"="TRUE", "Non-Playoffs"="FALSE"))),
       br(),
       
+      # Conditionally show predictor inputs based on variables selected in random forest
       h4("Random Forest Model Variables"),
       conditionalPanel(condition = "input.rf_vars.indexOf('pts') !== -1",
                        numericInput("rf_pts", "Points", 0, min=0, max=100)),
