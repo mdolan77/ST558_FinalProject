@@ -111,7 +111,8 @@ player_game_stats <- function(first_name=NULL, last_name=NULL,
       player_stats$game$home_team_score)
     
     # Create a visible Post-Season variable
-    player_stats$post_season <- as.factor(player_stats$game$postseason)
+    player_stats$post_season <- as.factor(if_else(player_stats$game$postseason == TRUE, "Playoffs",
+                                                  "Non-Playoffs"))
     
     # Create a visible player_team variable
     player_stats$player_team <- as.factor(player_stats$team$full_name)
@@ -201,22 +202,22 @@ player_game_stats <- function(first_name=NULL, last_name=NULL,
 
 # Define server logic
 shinyServer(function(input, output, session) {
+
   
   # Create data frame for player with above function, or display error message
   # if function does not execute properly.
-  observeEvent(input$create_data, {
+  Player_Data <- eventReactive(input$create_data, {
     tryCatch({
-      if(input$season_option == "select_seasons"){
-    Player_Data <- player_game_stats(first_name = input$first_name,
+        if(input$season_option == "select_seasons"){
+              player_game_stats(first_name = input$first_name,
                                      last_name = input$last_name,
                                      season = c(input$seasons[1]:input$seasons[2]))
-    }else{Player_Data <- player_game_stats(first_name = input$first_name,
+        }else{player_game_stats(first_name = input$first_name,
                                            last_name = input$last_name)}
-    output$data_table <- renderDataTable({datatable(Player_Data)})},
-    error = function(e){
-      output$data_table <- renderDataTable({data.frame(Error = "Check name and/or season inputs")})
-      }
-  )})
+    },
+    error = function(e){data.frame(Error = "Check name and/or season inputs")})
+    })
+  observeEvent(input$create_data, {output$data_table <- renderDataTable({datatable(Player_Data())})})
   
   # Update offensive rebound max so it does not exceed rebounds for GLM prediction input
   observe({if("reb" %in% input$glm_vars){
@@ -227,18 +228,170 @@ shinyServer(function(input, output, session) {
   observe({if("reb" %in% input$rf_vars){
     updateNumericInput(session, "rf_oreb", max = input$rf_reb)}
   })
-  
-    output$distPlot <- renderPlot({
-
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
+    
+    output$Plot <- renderPlot({
+      
+      # Generate bar plot
+      if(input$plot_type == "bar" && input$group_option_bar == 1){
+        ggplot(Player_Data(), aes_string(x=input$x_var_bar, y=input$y_var_bar)) +
+          stat_summary(fun = input$stat_type_bar, geom = "bar", position = "dodge") +
+          labs(title = "Bar Plot", x = input$x_var_bar, y=input$y_var_bar) +
+          facet_wrap(~ get(input$group_var_bar))
+      }else if(input$plot_type == "bar"){
+        ggplot(Player_Data(), aes_string(x=input$x_var_bar, y=input$y_var_bar)) +
+          stat_summary(fun = input$stat_type_bar, geom = "bar", position = "dodge") +
+          labs(title = "Bar Plot", x = input$x_var_bar, y=input$y_var_bar)
+      
+      # Generate histogram
+      }else if(input$plot_type == "hist" && input$group_option_hist == 1){
+        x <- Player_Data()[,input$var_hist]
         bins <- seq(min(x), max(x), length.out = input$bins + 1)
+        ggplot(Player_Data(), aes_string(x=input$var_hist)) +
+          geom_histogram(breaks=bins) +
+          labs(title = "Histogram", x=input$var_hist)
+          facet_wrap(~ get(input$group_var_hist))
+      }else if(input$plot_type == "hist"){
+        x <- Player_Data()[,input$var_hist]
+        bins <- seq(min(x), max(x), length.out = input$bins + 1)
+        ggplot(Player_Data(), aes_string(x=input$var_hist)) +
+          geom_histogram(breaks=bins) +
+          labs(title = "Histogram", x=input$var_hist)
+      
+      #Generate box plot
+      }else if(input$plot_type == "box" && input$group_option_box == 1){
+        ggplot(Player_Data(), aes_string(x=input$x_var_box, y=input$y_var_box)) +
+          geom_boxplot() +
+          labs(title = "Box and Whisker Plot", x = input$x_var_box, y=input$y_var_box) +
+          facet_wrap(~ get(input$group_var_box))
+      }else if(input$plot_type == "box"){
+        ggplot(Player_Data(), aes_string(x=input$x_var_box, y=input$y_var_box)) +
+          geom_boxplot() +
+          labs(title = "Box and Whisker Plot", x = input$x_var_box, y=input$y_var_box)
+      
+      # Generate scatter plot
+      }else if(input$plot_type == "scatter" && input$group_option_scatter == 1){
+        ggplot(Player_Data(), aes_string(x=input$x_var_scatter, y=input$y_var_scatter)) + 
+          geom_point(position="jitter") + 
+          labs(title = "Scatter Plot", x = input$x_var_scatter, y=input$y_var_scatter) + 
+          facet_wrap(~ get(input$group_var_scatter))
+      }else if(input$plot_type == "scatter"){
+        ggplot(Player_Data(), aes_string(x=input$x_var_scatter, y=input$y_var_scatter)) + 
+          geom_point(position="jitter") + 
+          labs(title = "Scatter Plot", x = input$x_var_scatter, y=input$y_var_scatter)
+      }
+    })
+      
+      summary_tab <- reactive({
+        
+        # Generate Mean/Median Summary Tables for bar plot
+        if(input$plot_type == "bar" && input$group_option_bar == 1 &&
+           input$stat_type_bar == "mean"){
+          Player_Data() %>% group_by(!!sym(input$x_var_bar), !!sym(input$group_var_bar)) %>%
+          summarize(Mean = round(mean(!!sym(input$y_var_bar), na.rm = TRUE), 3),
+                    SD = round(sd(!!sym(input$y_var_bar), na.rm = TRUE), 3))
+        }else if(input$plot_type == "bar" && input$stat_type_bar == "mean"){
+          Player_Data() %>% group_by(!!sym(input$x_var_bar)) %>%
+          summarize(Mean = round(mean(!!sym(input$y_var_bar), na.rm = TRUE), 3),
+                    SD = round(sd(!!sym(input$y_var_bar), na.rm = TRUE), 3))
+        }else if(input$plot_type == "bar" && input$group_option_bar == 1 &&
+                 input$stat_type_bar == "median"){
+          Player_Data() %>% group_by(!!sym(input$x_var_bar), !!sym(input$group_var_bar)) %>%
+          summarize(Q1 = round(quantile(!!sym(input$y_var_bar), na.rm = TRUE, prob=.25), 3),
+                    Median = round(median(!!sym(input$y_var_bar), na.rm = TRUE), 3),
+                    Q3 = round(quantile(!!sym(input$y_var_bar), na.rm = TRUE, prob=.75), 3))
+        }else if(input$plot_type == "bar" && input$stat_type_bar == "median"){
+          Player_Data() %>% group_by(!!sym(input$x_var_bar)) %>%
+          summarize(Q1 = round(quantile(!!sym(input$y_var_bar), na.rm = TRUE, prob=.25), 3),
+                    Median = round(median(!!sym(input$y_var_bar), na.rm = TRUE), 3),
+                    Q3 = round(quantile(!!sym(input$y_var_bar), na.rm = TRUE, prob=.75), 3))
+        
+        # Generate Mean/Median Summary Tables for histogram
+        }else if(input$plot_type == "hist" && input$group_option_hist == 1 &&
+                 input$stat_type_hist == "mean"){
+          Player_Data() %>% group_by(!!sym(input$group_var_hist)) %>%
+          summarize(Mean = round(mean(!!sym(input$var_hist), na.rm = TRUE), 3),
+                    SD = round(sd(!!sym(input$var_hist), na.rm = TRUE), 3))
+        }else if(input$plot_type == "hist" && input$stat_type_hist == "mean"){
+          Player_Data() %>%
+          summarize(Mean = round(mean(!!sym(input$var_hist), na.rm = TRUE), 3),
+                    SD = round(sd(!!sym(input$var_hist), na.rm = TRUE), 3))
+        }else if(input$plot_type == "hist" && input$group_option_hist == 1 &&
+                 input$stat_type_hist == "median"){
+          Player_Data() %>% group_by(!!sym(input$group_var_hist)) %>%
+          summarize(Q1 = round(quantile(!!sym(input$var_hist), na.rm = TRUE, prob=.25), 3),
+                    Median = round(median(!!sym(input$var_hist), na.rm = TRUE), 3),
+                    Q3 = round(quantile(!!sym(input$var_hist), na.rm = TRUE, prob=.75), 3))
+        }else if(input$plot_type == "hist" && input$stat_type_hist == "median"){
+          Player_Data() %>%
+          summarize(Q1 = round(quantile(!!sym(input$var_hist), na.rm = TRUE, prob=.25), 3),
+                    Median = round(median(!!sym(input$var_hist), na.rm = TRUE), 3),
+                    Q3 = round(quantile(!!sym(input$var_hist), na.rm = TRUE, prob=.75), 3))
+        
+        # Generate Mean/Median Summary Tables for box plot
+        }else if(input$plot_type == "box" && input$group_option_box == 1 &&
+                 input$stat_type_box == "mean"){
+          Player_Data() %>% group_by(!!sym(input$x_var_box), !!sym(input$group_var_box)) %>%
+          summarize(Mean = round(mean(!!sym(input$y_var_box), na.rm = TRUE), 3),
+                    SD = round(sd(!!sym(input$y_var_box), na.rm = TRUE), 3))
+        }else if(input$plot_type == "box" && input$stat_type_box == "mean"){
+          Player_Data() %>% group_by(!!sym(input$x_var_box)) %>%
+          summarize(Mean = round(mean(!!sym(input$y_var_box), na.rm = TRUE), 3),
+                    SD = round(sd(!!sym(input$y_var_box), na.rm = TRUE), 3))
+        }else if(input$plot_type == "box" && input$group_option_box == 1 &&
+                 input$stat_type_box == "median"){
+          Player_Data() %>% group_by(!!sym(input$x_var_box), !!sym(input$group_var_box)) %>%
+          summarize(Q1 = round(quantile(!!sym(input$y_var_box), na.rm = TRUE, prob=.25), 3),
+                    Median = round(median(!!sym(input$y_var_box), na.rm = TRUE), 3),
+                    Q3 = round(quantile(!!sym(input$y_var_box), na.rm = TRUE, prob=.75), 3))
+        }else if(input$plot_type == "box" && input$stat_type_box == "median"){
+          Player_Data() %>% group_by(!!sym(input$x_var_box)) %>%
+          summarize(Q1 = round(quantile(!!sym(input$y_var_box), na.rm = TRUE, prob=.25), 3),
+                    Median = round(median(!!sym(input$y_var_box), na.rm = TRUE), 3),
+                    Q3 = round(quantile(!!sym(input$y_var_box), na.rm = TRUE, prob=.75), 3))
+          
+        # Generate Mean/Median Summary Tables for scatter plot
+        }else if(input$plot_type == "scatter" && input$group_option_scatter == 1 &&
+                 input$stat_type_scatter == "mean"){
+          Player_Data() %>% group_by(!!sym(input$group_var_scatter)) %>%
+          summarize(Mean_X = round(mean(!!sym(input$x_var_scatter), na.rm = TRUE), 3),
+                    SD_X = round(sd(!!sym(input$x_var_scatter), na.rm = TRUE), 3),
+                    Mean_Y = round(mean(!!sym(input$y_var_scatter), na.rm = TRUE), 3),
+                    SD_Y = round(sd(!!sym(input$y_var_scatter), na.rm = TRUE), 3))
+        }else if(input$plot_type == "scatter" && input$stat_type_scatter == "mean"){
+          Player_Data() %>%
+          summarize(Mean_X = round(mean(!!sym(input$x_var_scatter), na.rm = TRUE), 3),
+                    SD_X = round(sd(!!sym(input$x_var_scatter), na.rm = TRUE), 3),
+                    Mean_Y = round(mean(!!sym(input$y_var_scatter), na.rm = TRUE), 3),
+                    SD_Y = round(sd(!!sym(input$y_var_scatter), na.rm = TRUE), 3))
+        }else if(input$plot_type == "scatter" && input$group_option_scatter == 1 &&
+                 input$stat_type_scatter == "median"){
+          Player_Data() %>% group_by(!!sym(input$group_var_scatter)) %>%
+          summarize(Q1_X = round(quantile(!!sym(input$x_var_scatter), na.rm = TRUE, prob=.25), 3),
+                    Median_X = round(median(!!sym(input$x_var_scatter), na.rm = TRUE), 3),
+                    Q3_X = round(quantile(!!sym(input$x_var_scatter), na.rm = TRUE, prob=.75), 3),
+                    Q1_Y = round(quantile(!!sym(input$y_var_scatter), na.rm = TRUE, prob=.25), 3),
+                    Median_Y = round(median(!!sym(input$y_var_scatter), na.rm = TRUE), 3),
+                    Q3_Y = round(quantile(!!sym(input$y_var_scatter), na.rm = TRUE, prob=.75), 3))
+        }else if(input$plot_type == "scatter" && input$stat_type_scatter == "median"){
+          Player_Data() %>%
+          summarize(Q1_X = round(quantile(!!sym(input$x_var_scatter), na.rm = TRUE, prob=.25), 3),
+                    Median_X = round(median(!!sym(input$x_var_scatter), na.rm = TRUE), 3),
+                    Q3_X = round(quantile(!!sym(input$x_var_scatter), na.rm = TRUE, prob=.75), 3),
+                    Q1_Y = round(quantile(!!sym(input$y_var_scatter), na.rm = TRUE, prob=.25), 3),
+                    Median_Y = round(median(!!sym(input$y_var_scatter), na.rm = TRUE), 3),
+                    Q3_Y = round(quantile(!!sym(input$y_var_scatter), na.rm = TRUE, prob=.75), 3))
+        }
+      })
+    
+    # Output summary table
+    output$Summary_table <- renderDT({datatable(summary_tab())
+      })
+
 
         # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             xlab = 'Waiting time to next eruption (in mins)',
-             main = 'Histogram of waiting times')
+        #hist(x, breaks = bins, col = 'darkgray', border = 'white',
+             #xlab = 'Waiting time to next eruption (in mins)',
+             #main = 'Histogram of waiting times')
 
-    })
 
 })

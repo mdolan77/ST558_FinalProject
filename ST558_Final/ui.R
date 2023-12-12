@@ -59,8 +59,8 @@ shinyUI(fluidPage(
       sidebarPanel(
         h4("Customize the plot/table"),
         selectInput("plot_type", "Plot Type",
-                    choices = c(Bar = "bar", Histogram="hist",
-                                "Box and Whisker"="box", Scatter="scatter")),
+                    choices = c("Bar Plot" = "bar", "Histogram"="hist",
+                                "Box and Whisker Plot"="box", "Scatter Plot"="scatter")),
         
         # Conditional panel for bar plot options
         conditionalPanel(condition = "input.plot_type == 'bar'",
@@ -70,7 +70,7 @@ shinyUI(fluidPage(
                                 Season="season", "Playoffs/Non-Playoffs"="post_season")),
         selectInput("y_var_bar", "Y-Axis Variable",
                     choices = c(Points = "pts", Rebounds="reb", Assists="ast", Steals="stl",
-                                Blocks = "blks", "Field Goals Made"="fgm", "Field Goal Attempts"="fga",
+                                Blocks = "blk", "Field Goals Made"="fgm", "Field Goal Attempts"="fga",
                                 "Field Goal Percentage"="fg_pct", "3-Pointers Made"="fg3m",
                                 "3-Point Attempts"="fg3a", "3-Point Percentage"="fg3_pct",
                                 "Free Throws Made"="ftm", "Free Throw Attempts"="fta",
@@ -82,6 +82,7 @@ shinyUI(fluidPage(
         # Allow option for faceting of bar plot
         checkboxInput("group_option_bar", "Include Grouping Variable"),
         conditionalPanel(condition = "input.group_option_bar",
+        h5("Note: Grouping variable and X-Axis Variable cannot be the same for the table to generate."),
         selectInput("group_var_bar", "Grouping Variable",
                     choices = c("Home/Away"="home_away", "Win/Loss"="win_loss",
                                 "Player Team"="player_team", "Opposing Team"="opponent_team",
@@ -102,7 +103,7 @@ shinyUI(fluidPage(
                     value = 30),
         selectInput("var_hist", "Variable",
                     choices = c(Points = "pts", Rebounds="reb", Assists="ast", Steals="stl",
-                                Blocks = "blks", "Field Goals Made"="fgm", "Field Goal Attempts"="fga",
+                                Blocks = "blk", "Field Goals Made"="fgm", "Field Goal Attempts"="fga",
                                 "Field Goal Percentage"="fg_pct", "3-Pointers Made"="fg3m",
                                 "3-Point Attempts"="fg3a", "3-Point Percentage"="fg3_pct",
                                 "Free Throws Made"="ftm", "Free Throw Attempts"="fta",
@@ -133,7 +134,7 @@ shinyUI(fluidPage(
                                 Season="season", "Playoffs/Non-Playoffs"="post_season")),
         selectInput("y_var_box", "Y-Axis Variable",
                     choices = c(Points = "pts", Rebounds="reb", Assists="ast", Steals="stl",
-                                Blocks = "blks", "Field Goals Made"="fgm", "Field Goal Attempts"="fga",
+                                Blocks = "blk", "Field Goals Made"="fgm", "Field Goal Attempts"="fga",
                                 "Field Goal Percentage"="fg_pct", "3-Pointers Made"="fg3m",
                                 "3-Point Attempts"="fg3a", "3-Point Percentage"="fg3_pct",
                                 "Free Throws Made"="ftm", "Free Throw Attempts"="fta",
@@ -145,6 +146,7 @@ shinyUI(fluidPage(
         # Allow option for faceting of box plot
         checkboxInput("group_option_box", "Include Grouping Variable"),
         conditionalPanel(condition = "input.group_option_box",
+        h5("Note: Grouping variable and X-Axis Variable cannot be the same for the table to generate."),
         selectInput("group_var_box", "Grouping Variable",
                     choices = c("Home/Away"="home_away", "Win/Loss"="win_loss",
                                 "Player Team"="player_team", "Opposing Team"="opponent_team",
@@ -160,7 +162,7 @@ shinyUI(fluidPage(
         conditionalPanel(condition = "input.plot_type == 'scatter'",
         selectInput("x_var_scatter", "X-Axis Variable",
                     choices = c(Points = "pts", Rebounds="reb", Assists="ast", Steals="stl",
-                                Blocks = "blks", "Field Goals Made"="fgm", "Field Goal Attempts"="fga",
+                                Blocks = "blk", "Field Goals Made"="fgm", "Field Goal Attempts"="fga",
                                 "Field Goal Percentage"="fg_pct", "3-Pointers Made"="fg3m",
                                 "3-Point Attempts"="fg3a", "3-Point Percentage"="fg3_pct",
                                 "Free Throws Made"="ftm", "Free Throw Attempts"="fta",
@@ -170,7 +172,7 @@ shinyUI(fluidPage(
                                 "Opposing Team Score"="opponent_score")),
         selectInput("y_var_scatter", "Y-Axis Variable",
                     choices = c(Points = "pts", Rebounds="reb", Assists="ast", Steals="stl",
-                                Blocks = "blks", "Field Goals Made"="fgm", "Field Goal Attempts"="fga",
+                                Blocks = "blk", "Field Goals Made"="fgm", "Field Goal Attempts"="fga",
                                 "Field Goal Percentage"="fg_pct", "3-Pointers Made"="fg3m",
                                 "3-Point Attempts"="fg3a", "3-Point Percentage"="fg3_pct",
                                 "Free Throws Made"="ftm", "Free Throw Attempts"="fta",
@@ -183,21 +185,20 @@ shinyUI(fluidPage(
         checkboxInput("group_option_scatter", "Include Grouping Variable"),
         conditionalPanel(condition = "input.group_option_scatter",
         selectInput("group_var_scatter", "Grouping Variable",
-                    choices = c())),
+                    choices = c("Home/Away"="home_away", "Win/Loss"="win_loss",
+                                "Player Team"="player_team", "Opposing Team"="opponent_team",
+                                Season="season", "Playoffs/Non-Playoffs"="post_season"))),
         
         # Customize table summaries
         selectInput("stat_type_scatter", "Summary Type (Table Only)",
                     choices = c("Value-Based Summaries (Mean, SD)"="mean",
                                 "Rank-Based Summaries (Median, IQR)"="median"))
-        ),
-        
-        # Button to generate plot and summary table
-        actionButton("create_plot", "Create Plot and Table")
+        )
         ),
 
         # Show a plot and table
         mainPanel(
-            plotOutput("distPlot")
+            plotOutput("Plot"), dataTableOutput("Summary_table")
         )
       )
     ),
@@ -235,7 +236,7 @@ shinyUI(fluidPage(
       h3("Generalized Linear Model Options"),
       checkboxGroupInput("glm_vars", "Variables", inline = TRUE,
                          choices = c(Points = "pts", Rebounds="reb", Assists="ast", Steals="stl",
-                                Blocks = "blks", "Field Goals Made"="fgm",
+                                Blocks = "blk", "Field Goals Made"="fgm",
                                 "Field Goal Percentage"="fg_pct", "3-Pointers Made"="fg3m",
                                 "3-Point Percentage"="fg3_pct", "Free Throws Made"="ftm",
                                 "Free Throw Percentage"="ft_pct", "Offensive Rebounds"="oreb",
@@ -248,7 +249,7 @@ shinyUI(fluidPage(
       h3("Random Forest Model Options"),
       checkboxGroupInput("rf_vars", "Variables", inline = TRUE,
                          choices = c(Points = "pts", Rebounds="reb", Assists="ast", Steals="stl",
-                                Blocks = "blks", "Field Goals Made"="fgm",
+                                Blocks = "blk", "Field Goals Made"="fgm",
                                 "Field Goal Percentage"="fg_pct", "3-Pointers Made"="fg3m",
                                 "3-Point Percentage"="fg3_pct", "Free Throws Made"="ftm",
                                 "Free Throw Percentage"="ft_pct", "Offensive Rebounds"="oreb",
