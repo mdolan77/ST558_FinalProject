@@ -41,12 +41,12 @@ shinyUI(fluidPage(
         # Slider input for selecting seasons, with some instructions
         conditionalPanel(condition = "input.season_option == 'select_seasons'",
         h4("Select a range of seasons"),
-        h5("The range must include seasons that the player played in, and your range must be less than 50 years. Otherwise it will result in an error."),
         h5("Note: Seasons are represented by the year they began (e.g. 2023 indicates the 2023-2024 season)"),
         
         sliderInput("seasons", "Season range", min=1949, max=2023, value = c(1949, 2023), sep="")
         ),
-        actionButton("create_data", "Create Data")
+        actionButton("create_data", "Create Data"),
+        h5("Note: Make sure that the player's name is be spelled correctly and the range includes seasons that the player played in. Otherwise it will result in an error message.")
       ),
       mainPanel(dataTableOutput("data_table"))
       )),

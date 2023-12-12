@@ -20,7 +20,7 @@ player_game_stats <- function(first_name=NULL, last_name=NULL,
   
   # Return Error message if First and Last name not specified
   if (is.null(first_name) | is.null(last_name))
-  {message("Error: First and last name of an NBA player must be specified.")}
+  {stop("Error: First and last name of an NBA player must be specified.")}
   else {
     
     # Find the player's PlayerID to be used later
@@ -40,7 +40,7 @@ player_game_stats <- function(first_name=NULL, last_name=NULL,
                         paste0("&player_ids[]=", playerID),
                         ifelse(is.null(postseason), "",
                                paste0("&postseason=", postseason))
-    ) 
+    )
     player_stats_api <- GET(url = stats_url)
     player_content <-
       fromJSON(rawToChar(player_stats_api$content))
@@ -73,7 +73,7 @@ player_game_stats <- function(first_name=NULL, last_name=NULL,
       
       # Each dataset in the list is combine vertically
       player_stats <- bind_rows(page_list)
-    }
+    }else if(total_pages==0){stop("Error: Check name and/or season inputs")}
     
     # If there is only one page,
     # that page is stored as player_stats
@@ -202,15 +202,21 @@ player_game_stats <- function(first_name=NULL, last_name=NULL,
 # Define server logic
 shinyServer(function(input, output, session) {
   
+  # Create data frame for player with above function, or display error message
+  # if function does not execute properly.
   observeEvent(input$create_data, {
-    if(input$season_option == "select_seasons"){
+    tryCatch({
+      if(input$season_option == "select_seasons"){
     Player_Data <- player_game_stats(first_name = input$first_name,
                                      last_name = input$last_name,
                                      season = c(input$seasons[1]:input$seasons[2]))
     }else{Player_Data <- player_game_stats(first_name = input$first_name,
                                            last_name = input$last_name)}
-    output$data_table <- renderDataTable({datatable(Player_Data)})
-  })
+    output$data_table <- renderDataTable({datatable(Player_Data)})},
+    error = function(e){
+      output$data_table <- renderDataTable({data.frame(Error = "Check name and/or season inputs")})
+      }
+  )})
   
   # Update offensive rebound max so it does not exceed rebounds for GLM prediction input
   observe({if("reb" %in% input$glm_vars){
