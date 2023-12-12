@@ -8,6 +8,9 @@ library(jsonlite)
 library(shiny)
 library(tidyverse)
 library(DT)
+library(caret)
+library(randomForest)
+library(glmnet)
 
 # The below function was created in Project 2 to pull a dataset of NBA game stats
 # for a specified player. It takes in arguments for the player's first and last name,
@@ -219,15 +222,6 @@ shinyServer(function(input, output, session) {
     })
   observeEvent(input$create_data, {output$data_table <- renderDataTable({datatable(Player_Data())})})
   
-  # Update offensive rebound max so it does not exceed rebounds for GLM prediction input
-  observe({if("reb" %in% input$glm_vars){
-      updateNumericInput(session, "glm_oreb", max = input$glm_reb)}
-    })
-  
-  # Update offensive rebound max so it does not exceed rebounds for random forest prediction input
-  observe({if("reb" %in% input$rf_vars){
-    updateNumericInput(session, "rf_oreb", max = input$rf_reb)}
-  })
     
     output$Plot <- renderPlot({
       
@@ -386,12 +380,138 @@ shinyServer(function(input, output, session) {
     # Output summary table
     output$Summary_table <- renderDT({datatable(summary_tab())
       })
-
-
-        # draw the histogram with the specified number of bins
-        #hist(x, breaks = bins, col = 'darkgray', border = 'white',
-             #xlab = 'Waiting time to next eruption (in mins)',
-             #main = 'Histogram of waiting times')
-
-
+    
+    # Reactive expression for GLM predictors
+    predictors_GLM <- reactive({
+      req(input$glm_vars)
+      return(input$glm_vars)
+    })
+    
+    # Reactive expression for random forest predictors
+    predictors_rf <- reactive({
+      req(input$rf_vars)
+      return(input$rf_vars)
+    })
+    
+    # Training the models
+    trained_models <- eventReactive(input$fit_models, {
+      withProgress(message = 'Training models...', detail = 'This may take some time...', value = 0, {
+        for (i in 1:15) {
+          incProgress(1/15)
+          Sys.sleep(0.1)
+        }
+      
+      formula_GLM <- as.formula(paste("win_loss ~", paste(predictors_GLM(), collapse = "+")))
+      formula_rf <- as.formula(paste("win_loss ~", paste(predictors_rf(), collapse = "+")))
+      
+      # Remove rows with missing values
+      Player_Data_no_na <- na.omit(Player_Data())
+      
+      index <- createDataPartition(Player_Data_no_na$win_loss, p=input$training_set/100, list = FALSE)
+      train_data <- Player_Data_no_na[index, ]
+      test_data <- Player_Data_no_na[-index, ]
+      
+      ctrl <- trainControl(
+        method = "cv",
+        number = input$cv)
+      
+      ntree_rf <- input$ntree
+      
+      withProgress(message = 'Training Random Forest model...', value = 0, {
+       GLM_Model <- train(
+        formula_GLM,
+        data = train_data,
+        method = "glm",
+        family = binomial,
+        trControl = ctrl
+       )
+       Sys.sleep(0.5)
+       incProgress(100)
+      })
+      
+      withProgress(message = 'Training Random Forest model...', value = 0, {
+       RF_Model <- train(
+        formula_rf,
+        data = train_data,
+        method = "rf",
+        trControl = ctrl,
+        tuneGrid = data.frame(mtry=input$mtry),
+        ntree = ntree_rf
+       )
+       Sys.sleep(0.5)
+       incProgress(100)
+      })
+      
+      return(list(RF_Model = RF_Model, GLM_Model = GLM_Model, train_data = train_data, test_data = test_data))
+      })
+    })
+    
+    output$modelSummaries <- renderPrint({
+      models <- trained_models()
+      
+      cat("\n\nGLM Model Summary:\n")
+      print(summary(models$GLM_Model))
+      
+      cat("Random Forest Model Summary:\n")
+      print(summary(models$RF_Model))
+      
+      cat("\n\nGLM Model Results (Training Set):\n")
+      print(models$GLM_Model$results)
+      
+      cat("Random Forest Model Results (Training Set):\n")
+      print(models$RF_Model$results)
+      
+      cat("\n\nGLM Model Results (Test Set):\n")
+      print(confusionMatrix(data = models$test_data$win_loss,
+                            reference=predict(models$GLM_Model,
+                                              newdata = models$test_data)))
+      
+      cat("\n\nRandom Forest Model Results (Test Set):\n")
+      print(confusionMatrix(data = models$test_data$win_loss,
+                            reference=predict(models$RF_Model,
+                                              newdata = models$test_data)))
+      
+    })
+    
+    # Update mtry max based on how many variables are selected in random forest
+    selected_vars_rf <- reactive({input$rf_vars})
+    observe({updateNumericInput(session, "mtry", max = length(selected_vars_rf()))})
+    
+    # Saved variables used in GLM
+    selected_vars_glm <- reactive({input$glm_vars})
+    
+    # Update offensive rebound max so it does not exceed rebounds for GLM prediction input
+    observe({if("reb" %in% input$glm_vars){
+      updateNumericInput(session, "glm_oreb", max = input$glm_reb)}
+    })
+    
+    # Update offensive rebound max so it does not exceed rebounds for random forest prediction input
+    observe({if("reb" %in% input$rf_vars){
+      updateNumericInput(session, "rf_oreb", max = input$rf_reb)}
+    })
+    
+    # Function to generate predictions
+    generatePrediction <- function(selected_vars, num_input, predict_model) {
+      
+      # Create a data frame with selected variables and numeric inputs
+      new_data <- as.data.frame(setNames(num_input, selected_vars), stringsAsFactors = FALSE)
+      
+      prediction <- predict(predict_model, newdata = new_data)
+      
+      return(prediction)
+    }
+    
+    # Generate predictions and output table with predicted outcomes
+    observeEvent(input$predict, {
+      input_vars_rf <- lapply(selected_vars_rf(), function(var) {input[[paste0("rf_", var)]]})
+      input_vars_glm <- lapply(selected_vars_glm(), function(var) {input[[paste0("glm_", var)]]})
+      prediction_rf <- generatePrediction(selected_vars_rf(), input_vars_rf, trained_models()$RF_Model)
+      prediction_glm <- generatePrediction(selected_vars_glm(), input_vars_glm, trained_models()$GLM_Model)
+      
+      pred_table <- reactive({data.frame("GLM Prediction"=prediction_glm,
+                                         "Random Forest Prediction"=prediction_rf)})
+      output$prediction_table <- renderDT(datatable(pred_table(),
+                                          colnames = c("GLM Prediction",
+                                                       "Random Forest Prediction")))
+    })
 })

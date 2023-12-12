@@ -3,9 +3,14 @@
 # Purpose of Program: Final Project (UI file)
 
 #Read in necessary packages
+library(httr)
+library(jsonlite)
 library(shiny)
 library(tidyverse)
 library(DT)
+library(caret)
+library(randomForest)
+library(glmnet)
 
 # Define UI for application that draws a histogram
 shinyUI(fluidPage(
@@ -259,14 +264,14 @@ shinyUI(fluidPage(
       
       # Specify tuning parameters for the random forest model
       h4("Input tuning parameters for the random forest model"),
-      numericInput("mtry", "Maximum Features", 3, min=2, max=15),
+      numericInput("mtry", "Maximum Features", 1, min=1, max=16),
       numericInput("ntree", "Number of Trees", 200, min = 50, max = 500),
       br(),
       
       # Button to create models
       actionButton("fit_models", "Create Models"),
       ),
-      mainPanel()
+      mainPanel(verbatimTextOutput("modelSummaries"))
       )),
       
       # Subtab for prediction
@@ -348,8 +353,10 @@ shinyUI(fluidPage(
       conditionalPanel(condition = "input.rf_vars.indexOf('post_season') !== -1",
                        selectInput("rf_post_season", "Playoffs/Non-Playoffs",
                                    choices=c("Playoffs"="TRUE", "Non-Playoffs"="FALSE"))),
+      
+      actionButton("predict", "Predict Win or Loss")
       ),
-      mainPanel()
+      mainPanel(dataTableOutput("prediction_table"))
       ))
      )
     )
