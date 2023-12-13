@@ -22,10 +22,34 @@ shinyUI(fluidPage(
     tabsetPanel(
     
     #Create the About tab
-    tabPanel("About"
-      
+    tabPanel("About",
+      h3("Purpose of App"),
+      h4("The purpose of this app is the allow the user to pull the box score game stats of any NBA player for any particular season, as well as create plots and numerical summaries of various statistics. Users can also take that data and fit it to two models (generalized linear model and random forest model) that will try to predict the outcome of the game based on the individual player's stats. Although one player cannot single-handedly win a game, these models attempt to show how much impact the player's stat line has on the outcome based on the accuracy of the resulting model."),
+      br(),
+      h3("Data Source"),
+      h4("This app facilitates the user to pull data from the ",
+         a(href="https://app.balldontlie.io/", target="_blank", "balldontlie"),
+         "API. This database provides access to statistics from the NBA, including individual game stats for players from 1946 to present. This is a free API that does not require an API key to access."),
+      img(src = "cryingjordan.jpeg", width = "200px", height = "200px"),
+      br(),
+      br(),
+      h3("How to Use the App"),
+      h4("Data Exploration Tab (Data Creation)"),
+      h5("First, navigate to the data exploration tab, where you can type in the first and last name of any NBA player. You can also select a specific group of seasons for that player, or pull all seasons that the player played. Then click create data. This is the data that will be referenced throught the rest of the app, and it can be reviewed in the data table to the right."),
+      h4("Data Exploration Tab (Plots and Summary Tables)"),
+      h5("This is where you can create plots and summary tables of the data you just created. You can select from four types of plots (bar plot, histogram, box and whisker plot, or scatter plot), as well as the corresponding x and y axis variables (if applicable to the graph). There is also an option to select a grouping variable, which will create multiple faceted plots broken out by the selected categorical variable. Below the plot, there is a data table that will summarize your selected variables with either value-based summaries (mean and standard deviation) or rank-based summaries (1st quartile, median, and 3rd quartile)."),
+      h4("Modeling Tab (Modeling Info)"),
+      h5("This tab gives an overview of the two models used on the following tab, as well as some benefits and drawbacks to each approach."),
+      h4("Modeling Tab (Model Fitting)"),
+      h5("On this tab, you can fit two models (GLM and random forest) that will attempt to predict the outcome of a game, as well as cutomize the options that go into creating these models. You can adjust the training data percentage, which will determine what percentage of the data is used to train the model and what percentage of the data is used to test the model (the remaining portion that is not used to train). You can also adjust the number of folds used for cross-validation, which variables are used in the model, and some parameters that are specific to the random forest model (maximum features and number of trees). The model can then be fit, which produces summaries of the models on the right, as well as the accuracy metric of the models based on the training data and a confusion matrix based on the test data that also includes the accuracy metric."),
+      h4("Modeling Tab (Prediction)"),
+      h5("This tab allows the user to input values for each variable selected in both models and produce the predicted outcome of the game based on these inputs. The model must be fit first prior to using this tab.")
     ),
     
+    tabPanel("Data Exploration",
+    
+    tabsetPanel(
+             
     # Tab that generates the dataset to be used throughout the app
     tabPanel("Data Creation",
       sidebarLayout(
@@ -48,7 +72,7 @@ shinyUI(fluidPage(
         h4("Select a range of seasons"),
         h5("Note: Seasons are represented by the year they began (e.g. 2023 indicates the 2023-2024 season)"),
         
-        sliderInput("seasons", "Season range", min=1949, max=2023, value = c(1949, 2023), sep="")
+        sliderInput("seasons", "Season range", min=1946, max=2023, value = c(1946, 2023), sep="")
         ),
         actionButton("create_data", "Create Data"),
         h5("Note: Make sure that the player's name is be spelled correctly and the range includes seasons that the player played in. Otherwise it will result in an error message.")
@@ -57,7 +81,7 @@ shinyUI(fluidPage(
       )),
     
     # Tab that creates customizable plots and data summaries
-    tabPanel("Data Exploration",
+    tabPanel("Plots and Summary Tables",
     
     # Sidebar to customize the data, plot, and table
     sidebarLayout(
@@ -206,7 +230,7 @@ shinyUI(fluidPage(
             plotOutput("Plot"), dataTableOutput("Summary_table")
         )
       )
-    ),
+    ))),
     
     # Tab for modeling
     tabPanel("Modeling",
@@ -215,7 +239,7 @@ shinyUI(fluidPage(
       # Subtab that describes the two models (GLM and random forest)
       tabPanel("Modeling Info",
       withMathJax(),
-      h5("Here is an equation: $$E=mc^2$$"),
+      h3("Generalized Linear Model (GLM)"),
       h4("Here is an equation: $$E=mc^2$$")
         
       ),

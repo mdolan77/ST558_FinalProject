@@ -180,8 +180,29 @@ player_game_stats <- function(first_name=NULL, last_name=NULL,
                                     player_stats$fg3_pct/100,
                                     player_stats$fg3_pct)
     
+    # Function to convert "min:sec" to numeric
+    convert_to_numeric <- function(time_string) {
+      parts <- strsplit(time_string, ":")[[1]]
+      
+      if (length(parts) == 1) {
+        # If there's no colon, assume it's just the number of minutes
+        total_minutes <- as.numeric(parts[1])
+      } else {
+        # If there's a colon, calculate total minutes
+        minutes <- as.numeric(parts[1])
+        seconds <- as.numeric(parts[2])
+        total_minutes <- minutes + seconds / 60
+      }
+      
+      return(total_minutes)
+    }
+    player_stats$min <- round(as.numeric(sapply(player_stats$min, convert_to_numeric)), 2)
+    
+    # Filter out DNPs
+    player_stats_filtered <- player_stats %>% filter(!is.na(min) & min != 0)
+    
     # Sort games by date
-    player_stats_sorted <- arrange(player_stats, date)
+    player_stats_sorted <- arrange(player_stats_filtered, date)
     
     # Select important stats and reorder columns
     player_stats_clean <- player_stats_sorted %>%
