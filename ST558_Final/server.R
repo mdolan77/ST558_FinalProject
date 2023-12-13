@@ -3,10 +3,10 @@
 # Purpose of Program: Final Project (Server file)
 
 # Read in necessary packages
-library(httr)
-library(jsonlite)
 library(shiny)
 library(tidyverse)
+library(httr)
+library(jsonlite)
 library(DT)
 library(caret)
 library(randomForest)

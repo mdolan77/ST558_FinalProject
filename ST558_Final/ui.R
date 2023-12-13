@@ -2,11 +2,11 @@
 # Date: 12/12/2023
 # Purpose of Program: Final Project (UI file)
 
-#Read in necessary packages
-library(httr)
-library(jsonlite)
+# Read in necessary packages
 library(shiny)
 library(tidyverse)
+library(httr)
+library(jsonlite)
 library(DT)
 library(caret)
 library(randomForest)
@@ -24,7 +24,7 @@ shinyUI(fluidPage(
     #Create the About tab
     tabPanel("About",
       h3("Purpose of App"),
-      h4("The purpose of this app is the allow the user to pull the box score game stats of any NBA player for any particular season, as well as create plots and numerical summaries of various statistics. Users can also take that data and fit it to two models (generalized linear model and random forest model) that will try to predict the outcome of the game based on the individual player's stats. Although one player cannot single-handedly win a game, these models attempt to show how much impact the player's stat line has on the outcome based on the accuracy of the resulting model."),
+      h4("The purpose of this app is the allow the user to pull the box score game stats of any NBA player for any particular season or group of seasons, as well as create plots and numerical summaries of various statistics. The user can also take that data and fit it to two models (generalized linear model and random forest model) that will try to predict the outcome of the game based on the individual player's stats. Although one player cannot single-handedly win a game, these models attempt to show how much impact the player's stat line has on the outcome based on the accuracy of the resulting model."),
       br(),
       h3("Data Source"),
       h4("This app facilitates the user to pull data from the ",
@@ -36,12 +36,16 @@ shinyUI(fluidPage(
       h3("How to Use the App"),
       h4("Data Exploration Tab (Data Creation)"),
       h5("First, navigate to the data exploration tab, where you can type in the first and last name of any NBA player. You can also select a specific group of seasons for that player, or pull all seasons that the player played. Then click create data. This is the data that will be referenced throught the rest of the app, and it can be reviewed in the data table to the right."),
+      br(),
       h4("Data Exploration Tab (Plots and Summary Tables)"),
       h5("This is where you can create plots and summary tables of the data you just created. You can select from four types of plots (bar plot, histogram, box and whisker plot, or scatter plot), as well as the corresponding x and y axis variables (if applicable to the graph). There is also an option to select a grouping variable, which will create multiple faceted plots broken out by the selected categorical variable. Below the plot, there is a data table that will summarize your selected variables with either value-based summaries (mean and standard deviation) or rank-based summaries (1st quartile, median, and 3rd quartile)."),
+      br(),
       h4("Modeling Tab (Modeling Info)"),
       h5("This tab gives an overview of the two models used on the following tab, as well as some benefits and drawbacks to each approach."),
+      br(),
       h4("Modeling Tab (Model Fitting)"),
       h5("On this tab, you can fit two models (GLM and random forest) that will attempt to predict the outcome of a game, as well as cutomize the options that go into creating these models. You can adjust the training data percentage, which will determine what percentage of the data is used to train the model and what percentage of the data is used to test the model (the remaining portion that is not used to train). You can also adjust the number of folds used for cross-validation, which variables are used in the model, and some parameters that are specific to the random forest model (maximum features and number of trees). The model can then be fit, which produces summaries of the models on the right, as well as the accuracy metric of the models based on the training data and a confusion matrix based on the test data that also includes the accuracy metric."),
+      br(),
       h4("Modeling Tab (Prediction)"),
       h5("This tab allows the user to input values for each variable selected in both models and produce the predicted outcome of the game based on these inputs. The model must be fit first prior to using this tab.")
     ),
@@ -242,20 +246,25 @@ shinyUI(fluidPage(
       h3("Generalized Linear Model (GLM) - Logistic Regression"),
       h4("Model Overview"),
       h5("A logistic GLM is a type of statistical model used for binary classification problems where the outcome variable can be one of two responses, success or failure. It includes a linear combination of the independent variables weighted by their coefficients. It also includes a link function, and in logistic regression this is the logit function, where p is the probability of the event occurring. The logit function transforms the probability scale (which ranges from 0 to 1) to the log-odds scale (which ranges from negative to positive infinity)."),
+      br(),
       h4("Model Equation:"),
       h5("$$\\log\\left(\\frac{p}{1-p}\\right) = \\beta_0 + \\beta_1 X_1 + \\beta_2 X_2 + \\ldots + \\beta_p X_p$$"),
       h4("Benefits"),
       h5("There are several benefits to generalized linear models. GLMs can be fairly effective at predicting binary outcomes, and the predicted probabilities can be used to classify observations into different categories. It also allows for hypothesis testing, providing a framework for assessing the significance of predictor variables."),
+      br(),
       h4("Drawbacks"),
       h5("There are also some drawbacks to GLMs. Logistic regression assumes a linear relationship between the independent variables and the log-odds of the event occurring, but if this assumption is false, model performance may be compromised. This model can also can be susceptible to overfitting if the model is too complex relative to the amount of available data."),
       br(),
       h3("Random Forest Model"),
       h4("Model Overview"),
       h5("A Random Forest is an ensemble learning method that combines the predictions of multiple decision trees to improve overall accuracy and reduce overfitting."),
+      br(),
       h4("Model Building"),
       h5("While Random Forests don't have a simple equation like linear models, their prediction process involves aggregating the predictions of individual decision trees. The output of a Random Forest model is typically based on the majority vote (classification) or average (regression) of the predictions from the constituent trees. Random Forest is composed of a collection of decision trees. Each decision tree is built using a random subset of the training data (bootstrap sampling) and a random subset of features at each split. The randomness in building individual trees helps to decorrelate them and improve the overall model's performance."),
+      br(),
       h4("Benefits"),
       h5("There are many benefits to Random Forest models. They generally provide high accuracy and their ensemble nature helps to mitigate overfitting, making them more robust when dealing with complex datasets. They can also provide a measure of variable importance, which helps to identify which features contribute the most to the model's predictive performance, and can capture non-linear relationships in data."),
+      br(),
       h4("Drawbacks"),
       h5("Random Forests also have some drawbacks. Their training can be computationally complex and consume a significant amount of memory, especially for large datasets and models with a high number of trees and features, which can lead to higher cost. Random Forests are also considered to be black-box models, and understanding the detailed decision-making process under the hood can be difficult. They can also be sensitive to noisy or irrelevant features in the dataset, which may affect model performance.")
         
