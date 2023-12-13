@@ -422,22 +422,26 @@ shinyServer(function(input, output, session) {
           Sys.sleep(0.1)
         }
       
+      # Create formulas to be input into the train function
       formula_GLM <- as.formula(paste("win_loss ~", paste(predictors_GLM(), collapse = "+")))
       formula_rf <- as.formula(paste("win_loss ~", paste(predictors_rf(), collapse = "+")))
       
       # Remove rows with missing values
       Player_Data_no_na <- na.omit(Player_Data())
       
+      # Create training and test data
       index <- createDataPartition(Player_Data_no_na$win_loss, p=input$training_set/100, list = FALSE)
       train_data <- Player_Data_no_na[index, ]
       test_data <- Player_Data_no_na[-index, ]
       
+      # Create cross-validation parameters
       ctrl <- trainControl(
         method = "cv",
         number = input$cv)
       
       ntree_rf <- input$ntree
       
+      # Train GLM Model
       withProgress(message = 'Training Random Forest model...', value = 0, {
        GLM_Model <- train(
         formula_GLM,
@@ -450,6 +454,7 @@ shinyServer(function(input, output, session) {
        incProgress(100)
       })
       
+      # Train Random Forest Model
       withProgress(message = 'Training Random Forest model...', value = 0, {
        RF_Model <- train(
         formula_rf,
@@ -463,10 +468,12 @@ shinyServer(function(input, output, session) {
        incProgress(100)
       })
       
+      # Return list including models and data sets
       return(list(RF_Model = RF_Model, GLM_Model = GLM_Model, train_data = train_data, test_data = test_data))
       })
     })
     
+    # Output results of the models
     output$modelSummaries <- renderPrint({
       models <- trained_models()
       

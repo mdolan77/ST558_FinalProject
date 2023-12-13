@@ -236,11 +236,28 @@ shinyUI(fluidPage(
     tabPanel("Modeling",
      tabsetPanel(
       
-      # Subtab that describes the two models (GLM and random forest)
+      # Subtab that describes the two models (GLM and Random Forest)
       tabPanel("Modeling Info",
       withMathJax(),
-      h3("Generalized Linear Model (GLM)"),
-      h4("Here is an equation: $$E=mc^2$$")
+      h3("Generalized Linear Model (GLM) - Logistic Regression"),
+      h4("Model Overview"),
+      h5("A logistic GLM is a type of statistical model used for binary classification problems where the outcome variable can be one of two responses, success or failure. It includes a linear combination of the independent variables weighted by their coefficients. It also includes a link function, and in logistic regression this is the logit function, where p is the probability of the event occurring. The logit function transforms the probability scale (which ranges from 0 to 1) to the log-odds scale (which ranges from negative to positive infinity)."),
+      h4("Model Equation:"),
+      h5("$$\\log\\left(\\frac{p}{1-p}\\right) = \\beta_0 + \\beta_1 X_1 + \\beta_2 X_2 + \\ldots + \\beta_p X_p$$"),
+      h4("Benefits"),
+      h5("There are several benefits to generalized linear models. GLMs can be fairly effective at predicting binary outcomes, and the predicted probabilities can be used to classify observations into different categories. It also allows for hypothesis testing, providing a framework for assessing the significance of predictor variables."),
+      h4("Drawbacks"),
+      h5("There are also some drawbacks to GLMs. Logistic regression assumes a linear relationship between the independent variables and the log-odds of the event occurring, but if this assumption is false, model performance may be compromised. This model can also can be susceptible to overfitting if the model is too complex relative to the amount of available data."),
+      br(),
+      h3("Random Forest Model"),
+      h4("Model Overview"),
+      h5("A Random Forest is an ensemble learning method that combines the predictions of multiple decision trees to improve overall accuracy and reduce overfitting."),
+      h4("Model Building"),
+      h5("While Random Forests don't have a simple equation like linear models, their prediction process involves aggregating the predictions of individual decision trees. The output of a Random Forest model is typically based on the majority vote (classification) or average (regression) of the predictions from the constituent trees. Random Forest is composed of a collection of decision trees. Each decision tree is built using a random subset of the training data (bootstrap sampling) and a random subset of features at each split. The randomness in building individual trees helps to decorrelate them and improve the overall model's performance."),
+      h4("Benefits"),
+      h5("There are many benefits to Random Forest models. They generally provide high accuracy and their ensemble nature helps to mitigate overfitting, making them more robust when dealing with complex datasets. They can also provide a measure of variable importance, which helps to identify which features contribute the most to the model's predictive performance, and can capture non-linear relationships in data."),
+      h4("Drawbacks"),
+      h5("Random Forests also have some drawbacks. Their training can be computationally complex and consume a significant amount of memory, especially for large datasets and models with a high number of trees and features, which can lead to higher cost. Random Forests are also considered to be black-box models, and understanding the detailed decision-making process under the hood can be difficult. They can also be sensitive to noisy or irrelevant features in the dataset, which may affect model performance.")
         
       ),
       
