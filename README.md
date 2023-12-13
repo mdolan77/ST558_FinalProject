@@ -11,6 +11,7 @@ Packages needed to run app:
  - caret
  - randomForest
  - glmnet
+ - shinythemes
   
   
 Code to install necessary packages:
@@ -23,6 +24,7 @@ install.packages("DT")
 install.packages("caret")
 install.packages("randomForest")
 install.packages("glmnet")
+install.packages("shinythemes")
 ```
   
   

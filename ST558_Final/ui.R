@@ -11,9 +11,10 @@ library(DT)
 library(caret)
 library(randomForest)
 library(glmnet)
+library(shinythemes)
 
-# Define UI for application that draws a histogram
-shinyUI(fluidPage(
+# Define UI for application and add theme
+shinyUI(fluidPage(theme=shinytheme("spacelab"),
 
     # Application title
     titlePanel("NBA Player Data"),
@@ -47,7 +48,10 @@ shinyUI(fluidPage(
       h5("On this tab, you can fit two models (GLM and random forest) that will attempt to predict the outcome of a game, as well as cutomize the options that go into creating these models. You can adjust the training data percentage, which will determine what percentage of the data is used to train the model and what percentage of the data is used to test the model (the remaining portion that is not used to train). You can also adjust the number of folds used for cross-validation, which variables are used in the model, and some parameters that are specific to the random forest model (maximum features and number of trees). The model can then be fit, which produces summaries of the models on the right, as well as the accuracy metric of the models based on the training data and a confusion matrix based on the test data that also includes the accuracy metric."),
       br(),
       h4("Modeling Tab (Prediction)"),
-      h5("This tab allows the user to input values for each variable selected in both models and produce the predicted outcome of the game based on these inputs. The model must be fit first prior to using this tab.")
+      h5("This tab allows the user to input values for each variable selected in both models and produce the predicted outcome of the game based on these inputs. The model must be fit first prior to using this tab."),
+      br(),
+      h5("")
+      
     ),
     
     tabPanel("Data Exploration",
@@ -249,6 +253,7 @@ shinyUI(fluidPage(
       br(),
       h4("Model Equation:"),
       h5("$$\\log\\left(\\frac{p}{1-p}\\right) = \\beta_0 + \\beta_1 X_1 + \\beta_2 X_2 + \\ldots + \\beta_p X_p$$"),
+      br(),
       h4("Benefits"),
       h5("There are several benefits to generalized linear models. GLMs can be fairly effective at predicting binary outcomes, and the predicted probabilities can be used to classify observations into different categories. It also allows for hypothesis testing, providing a framework for assessing the significance of predictor variables."),
       br(),
@@ -266,7 +271,9 @@ shinyUI(fluidPage(
       h5("There are many benefits to Random Forest models. They generally provide high accuracy and their ensemble nature helps to mitigate overfitting, making them more robust when dealing with complex datasets. They can also provide a measure of variable importance, which helps to identify which features contribute the most to the model's predictive performance, and can capture non-linear relationships in data."),
       br(),
       h4("Drawbacks"),
-      h5("Random Forests also have some drawbacks. Their training can be computationally complex and consume a significant amount of memory, especially for large datasets and models with a high number of trees and features, which can lead to higher cost. Random Forests are also considered to be black-box models, and understanding the detailed decision-making process under the hood can be difficult. They can also be sensitive to noisy or irrelevant features in the dataset, which may affect model performance.")
+      h5("Random Forests also have some drawbacks. Their training can be computationally complex and consume a significant amount of memory, especially for large datasets and models with a high number of trees and features, which can lead to higher cost. Random Forests are also considered to be black-box models, and understanding the detailed decision-making process under the hood can be difficult. They can also be sensitive to noisy or irrelevant features in the dataset, which may affect model performance."),
+      br(),
+      h5("")
         
       ),
       
